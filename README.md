@@ -21,16 +21,16 @@ When ran the pipeline impute the individuals genomic information using glimpse1 
 <!-- TODO Add test if the panel is already phased or not -->
 
 1. Process the panel for it to be use
-    1. Select the region of interest
-    2. Rename the chromosome to standard convention
-    3. Normalise the panel
-    4. Extract only the SNP
-    5. Convert to TSV
-    6. Phase the panel (if necessary)
+   1. Select the region of interest
+   2. Rename the chromosome to standard convention
+   3. Normalise the panel
+   4. Extract only the SNP
+   5. Convert to TSV
+   6. Phase the panel (if necessary)
 2. Impute the individuals data
-    1. Chunk regions in smaller regions
-    2. Phase the chunks
-    3. Ligate the chunks into one file per individual
+   1. Chunk regions in smaller regions
+   2. Phase the chunks
+   3. Ligate the chunks into one file per individual
 
 ## Usage
 
@@ -85,7 +85,6 @@ For more details, please refer to the [usage documentation](https://nf-co.re/imp
 To see the the results of a test run with a full size dataset refer to the [results](https://nf-co.re/impute/results) tab on the nf-core website pipeline page.
 For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/impute/output).
-
 
 ## TODO list
 
