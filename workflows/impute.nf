@@ -9,15 +9,33 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 // Validate input parameters
 WorkflowImpute.initialise(params, log)
 
-// TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.panel, params.region ]
+def checkPathParamList = [ params.input, params.multiqc_config, params.panel, params.panel_index, params.regions, params.fasta ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
-if (params.input)  { ch_input = file(params.input)   } else { exit 1, 'Input samplesheet not specified!' }
-if (params.panel)  { ch_panel = file(params.panel)   } else { exit 1, 'Input panelsheet not specified!'  }
-if (params.region) { ch_region = file(params.region) } else { exit 1, 'Input regionsheet not specified!' }
+if (params.input)   { ch_input = file(params.input)    } else { exit 1, 'Input samplesheet not specified!' }
+if (params.regions) { ch_region = file(params.regions) } else { exit 1, 'Input regionsheet not specified!' }
+if (params.fasta)   {
+    ch_fasta = Channel.of([
+        ["id":file(params.fasta, checkIfExists: true).baseName],
+        file(params.fasta, checkIfExists: true)])
+} else {
+    exit 1, 'Input fasta not specified!'
+}
+if (params.panel) {
+    if (params.panel_index) {
+        ch_panel = Channel.of([
+            ["id":file(params.panel, checkIfExists: true).baseName],
+            file(params.panel, checkIfExists: true),
+            file(params.panel_index, checkIfExists: true)])
+    } else {
+        exit 1, 'Panel index file need to be specified!'
+    }
+} else {
+    exit 1, 'Panel file need to be specified!'
+}
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
@@ -39,7 +57,6 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { INPUT_CHECK  } from '../subworkflows/local/input_check'
-include { PANEL_CHECK  } from '../subworkflows/local/input_check'
 include { REGION_CHECK } from '../subworkflows/local/input_check'
 
 include { GET_PANEL    } from '../subworkflows/local/get_panel'
@@ -74,15 +91,14 @@ workflow IMPUTE {
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
     INPUT_CHECK (ch_input)
-    PANEL_CHECK (ch_panel)
     REGION_CHECK(ch_region)
-
     //
     // MODULE: Prepare panel
     //
     GET_PANEL(
-        PANEL_CHECK.out.panel,
+        ch_panel,
         REGION_CHECK.out.region,
+        ch_fasta,
         "/groups/dog/llenezet/script/nf-core-impute/assets/chr_rename.txt"
     )
     ch_versions = ch_versions.mix(GET_PANEL.out.versions)
@@ -90,11 +106,10 @@ workflow IMPUTE {
     //
     // MODULE: Run imputation
     //
-
     impute_input = INPUT_CHECK.out.vcf
                 .combine(Channel.of([[]]))
                 .combine(REGION_CHECK.out.region)
-                .map { meta, vcf, index, sample, metaR, fasta, region ->
+                .map { meta, vcf, index, sample, metaR, region ->
                     [meta, vcf, index, sample, region]
                 }
 

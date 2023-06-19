@@ -12,20 +12,25 @@
 
 ## Introduction
 
-**nf-core/impute** is a bioinformatics pipeline that ...
-
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+**nf-core/impute** is a bioinformatics pipeline that impute genomic data based on a reference panel given.
+For the workflow to work you need the individual vcf or bam file listed in an `input.csv` and a phased reference panel.
+When ran the pipeline impute the individuals genomic information using glimpse1 or glimpse2 and give a `imputed.vcf` as an output.
 
 <!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
+<!-- TODO Add test if the panel is already phased or not -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+1. Process the panel for it to be use
+  1. Select the region of interest
+  2. Rename the chromosome to standard convention
+  3. Normalise the panel
+  4. Extract only the SNP
+  5. Convert to TSV
+  6. Phase the panel (if necessary)
+2. Impute the individuals data
+  1. Chunk regions in smaller regions
+  2. Phase the chunks
+  3. Ligate the chunks into one file per individual
 
 ## Usage
 
@@ -34,21 +39,16 @@
 > to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
 > with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
 First, prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+patient,sample,vcf,index
+NA12878,test,NA12878.chr21.s.bcf,NA12878.chr21.s.bcf.csi
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
+Each row represents a vcf file and its index
 
 Now, you can run the pipeline using:
 
@@ -58,7 +58,17 @@ Now, you can run the pipeline using:
 nextflow run nf-core/impute \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
+   --panel panel.bcf \
+   --fasta fasta.fa \
    --outdir <OUTDIR>
+```
+
+You can run the minimal test using:
+
+```bash
+nextflow run main.nf \
+   -profile test,singularity \
+   --outdir results
 ```
 
 > **Warning:**

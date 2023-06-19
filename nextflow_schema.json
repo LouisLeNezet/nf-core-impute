@@ -67,7 +67,16 @@
                     "type": "string",
                     "description": "Reference panels file to use for imputation.",
                     "fa_icon": "far fa-file-code",
-                    "pattern": "^\\S+\\.vcf?(\\.gz)?$",
+                    "pattern": "^\\S+\\.[vb]cf?(\\.gz)?$",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs."
+                },
+                "panel_index": {
+                    "type": "string",
+                    "description": "Reference panels file index to use for imputation.",
+                    "fa_icon": "far fa-file-code",
+                    "pattern": "^\\S+\\.[vb]cf?(\\.gz)?\\.(csi|tbi)$",
                     "format": "file-path",
                     "mimetype": "text/plain",
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs."
@@ -97,8 +106,7 @@
                     "hidden": true,
                     "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
                 }
-            },
-            "required": ["fasta", "panel"]
+            }
         },
         "institutional_config_options": {
             "title": "Institutional config options",

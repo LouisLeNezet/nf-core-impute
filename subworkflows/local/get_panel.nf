@@ -16,8 +16,9 @@ include { VCF_PHASE_SHAPEIT5                     } from '../../subworkflows/nf-c
 
 workflow GET_PANEL {
     take:
-    ch_vcf          // channel: [ [id, ref], vcf ]
-    ch_region       // channel: [ [ref, region], fasta, val(region)]
+    ch_vcf          // channel: [ [id, ref], vcf, index ]
+    ch_region       // channel: [ [region], val(region)]
+    ch_fasta        // channel: [ [id], fasta ]
     file_chr_rename // file
 
     main:
@@ -27,8 +28,8 @@ workflow GET_PANEL {
     // Filter the region of interest of the panel file
     ch_input_region = ch_vcf
                         .combine(ch_region)
-                        .map{ metaIR, vcf, index, metaRR, fasta, region ->
-                            [metaIR + metaRR, vcf, index, region+",chr"+region]}
+                        .map{ metaV, vcf, index, metaR, region ->
+                            [metaV + metaR, vcf, index, region+",chr"+region]}
 
     VIEW_VCF_REGION(ch_input_region, [], [], [])
     ch_versions = ch_versions.mix(VIEW_VCF_REGION.out.versions.first())
@@ -40,7 +41,7 @@ workflow GET_PANEL {
     BCFTOOLS_ANNOTATE(VIEW_VCF_REGION.out.vcf
                 .combine(VCF_INDEX1.out.csi, by:0)
                 .combine(Channel.of([[],[], []])),
-                file_chr_rename)
+                [])
 
     VCF_INDEX2(BCFTOOLS_ANNOTATE.out.vcf)
     ch_versions = ch_versions.mix(VCF_INDEX2.out.versions.first())
@@ -48,12 +49,12 @@ workflow GET_PANEL {
     // Normalise the panel
     ch_norm = BCFTOOLS_ANNOTATE.out.vcf
                 .combine(VCF_INDEX2.out.csi, by:0)
-                .map{metaIRR, vcf, index -> [metaIRR.subMap(["ref","region"]), metaIRR, vcf, index]}
+                .map{metaVR, vcf, index -> [metaVR.subMap(["region"]), metaVR, vcf, index]}
                 .combine(ch_region, by:0)
-                .map{metaRR, metaIRR, vcf, index, fasta, region ->
-                    [metaIRR, vcf, index, fasta]}
+                .map{metaR, metaVR, vcf, index, region ->
+                    [metaVR, vcf, index]}
 
-    BCFTOOLS_NORM(ch_norm)
+    BCFTOOLS_NORM(ch_norm, ch_fasta)
     ch_versions = ch_versions.mix(BCFTOOLS_NORM.out.versions.first())
 
     // Extract only the SNP

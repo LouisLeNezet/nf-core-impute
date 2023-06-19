@@ -16,20 +16,6 @@ workflow INPUT_CHECK {
     vcf                                     // channel: [ val(meta), [ vcf, index ] ]
 }
 
-workflow PANEL_CHECK {
-    take:
-    panelsheet // file: /path/to/panelsheet.csv
-
-    main:
-    Channel.fromPath ( panelsheet )
-        .splitCsv ( header:true, sep:',' )
-        .map { create_panel_channel(it) }
-        .set { panel }
-
-    emit:
-    panel                                    // channel: [meta,  panel, index ]
-}
-
 workflow REGION_CHECK {
     take:
     regionsheet // file: /path/to/samplesheet.csv
@@ -64,27 +50,12 @@ def create_vcf_channel(LinkedHashMap row) {
     return vcf_meta
 }
 
-// Function to get list of panel
-def create_panel_channel(LinkedHashMap row) {
-    // create meta map
-    def meta = [:]
-    meta.ref        = row.ref_id
-    meta.panel      = row.panel_id
-    meta.id         = row.panel_id
-
-    // add path(s) of the vcf file(s) to the meta map
-    def panel_meta = []
-    panel_meta = [meta, [file(row.file)], [file(row.file_index)]]
-    return panel_meta
-}
-
 def create_region_channel(LinkedHashMap row) {
     // create meta map
     def meta = [:]
-    meta.ref        = row.ref
     meta.region     = "$row.chr:$row.start-$row.end"
     // colapse regions in chr:start-end format
     def region_meta = []
-    region_meta = [meta, file(row.fasta), "$row.chr:$row.start-$row.end"]
+    region_meta = [meta, "$row.chr:$row.start-$row.end"]
     return region_meta
 }

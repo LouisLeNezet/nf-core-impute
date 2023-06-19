@@ -24,13 +24,13 @@
             },
             "vcf": {
                 "type": "string",
-                "pattern": "^\\S+\\.vcf\\.gz$",
-                "errorMessage": "Individuals vcf needs to be provided and must have an extension '.vcf.gz'"
+                "pattern": "^\\S+\\.[vb]cf(\\.gz)?$",
+                "errorMessage": "Individuals vcf needs to be provided and must have an extension '.vcf.gz' or 'bcf'"
             },
             "index": {
                 "type": "string",
-                "pattern": "^\\S+\\.vcf\\.gz\\.tbi$",
-                "errorMessage": "Individuals vcf needs to be provided and must have an extension '.vcf.gz.tbi'"
+                "pattern": "^\\S+\\.[vb]cf(\\.gz)?\\.(tbi|csi)?$",
+                "errorMessage": "Individuals vcf needs to be provided and must have an extension '.vcf.gz.tbi' or 'bcf.csi'"
             }
         },
         "required": ["sample", "vcf", "index"]
