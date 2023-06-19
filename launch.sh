@@ -18,7 +18,7 @@ nextflow \
     run main.nf \
     -c nextflow.config \
     --input /groups/dog/llenezet/script/nf-core-impute/assets/samplesheet.csv \
-    --region /groups/dog/llenezet/script/nf-core-impute/assets/regionsheet.csv \
+    --regions /groups/dog/llenezet/script/nf-core-impute/assets/regionsheet.csv \
     --panel /groups/dog/llenezet/script/nf-core-impute/assets/panelsheet.csv \
     --outdir /scratch/llenezet/nf/data/impute \
     -work-dir /scratch/llenezet/nf/work \

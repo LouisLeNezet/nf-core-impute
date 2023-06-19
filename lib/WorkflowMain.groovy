@@ -89,9 +89,9 @@ class WorkflowMain {
         if (!params.panel) {
             Nextflow.error("Please provide an input panelsheet to the pipeline e.g. '--panel panelsheet.csv'")
         }
-        // Check region has been provided
-        if (!params.region) {
-            Nextflow.error("Please provide an input regionsheet to the pipeline e.g. '--region regionsheet.csv'")
+        // Check regions has been provided
+        if (!params.regions) {
+            Nextflow.error("Please provide an input regionsheet to the pipeline e.g. '--regions regionsheet.csv'")
         }
     }
     //

@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/nf-core/impute/master/assets/schema_input.json",
+    "title": "nf-core/impute pipeline - params.regions schema",
+    "description": "Schema for the file provided with params.regions",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "chr": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Chromosome name must be provided and cannot contain spaces"
+            },
+            "start": {
+                "type": "number",
+                "pattern": "^\\d+$",
+                "errorMessage": "Starting position must be provided and cannot contain spaces"
+            },
+            "end": {
+                "type": "number",
+                "pattern": "^\\d+$",
+                "errorMessage": "End position must be provided and cannot contain spaces"
+            }
+        },
+        "required": ["chr", "start", "end"]
+    }
+}

@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "outdir", "panel", "region"],
+            "required": ["input", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -27,14 +27,6 @@
                     "format": "directory-path",
                     "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
-                },
-                "region": {
-                    "type": "string",
-                    "default": null
-                },
-                "panel": {
-                    "type": "string",
-                    "default": null
                 },
                 "email": {
                     "type": "string",
@@ -71,6 +63,25 @@
                     "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
                     "fa_icon": "far fa-file-code"
                 },
+                "panel": {
+                    "type": "string",
+                    "description": "Reference panels file to use for imputation.",
+                    "fa_icon": "far fa-file-code",
+                    "pattern": "^\\S+\\.vcf?(\\.gz)?$",
+                    "format": "file-path",
+                    "mimetype": "text/plain",
+                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs."
+                },
+                "regions": {
+                    "type": "string",
+                    "description": "Path to comma-separated file containing the regions to impute.",
+                    "help_text": "You will need to create a design file with information about the regions you want to impute before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row (chr,start,end corresponding to the chromosome, the start and the end of the location).\nIf none file is given, then all the full chromosome will be imputed.",
+                    "format": "file-path",
+                    "schema": "assets/schema_regions.json",
+                    "pattern": "^\\S+\\.csv$",
+                    "mimetype": "text/csv",
+                    "fa_icon": "fas fa-file-csv"
+                },
                 "igenomes_base": {
                     "type": "string",
                     "format": "directory-path",
@@ -86,7 +97,8 @@
                     "hidden": true,
                     "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
                 }
-            }
+            },
+            "required": ["fasta", "panel"]
         },
         "institutional_config_options": {
             "title": "Institutional config options",

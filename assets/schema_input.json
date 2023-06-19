@@ -7,30 +7,32 @@
     "items": {
         "type": "object",
         "properties": {
+            "patient": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Patient name cannot contain spaces"
+            },
             "sample": {
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample name must be provided and cannot contain spaces"
             },
-            "fastq_1": {
+            "lane": {
                 "type": "string",
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
+                "pattern": "^\\S+$",
+                "errorMessage": "Lane name cannot contain spaces"
             },
-            "fastq_2": {
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
-                "anyOf": [
-                    {
-                        "type": "string",
-                        "pattern": "^\\S+\\.f(ast)?q\\.gz$"
-                    },
-                    {
-                        "type": "string",
-                        "maxLength": 0
-                    }
-                ]
+            "vcf": {
+                "type": "string",
+                "pattern": "^\\S+\\.vcf\\.gz$",
+                "errorMessage": "Individuals vcf needs to be provided and must have an extension '.vcf.gz'"
+            },
+            "index": {
+                "type": "string",
+                "pattern": "^\\S+\\.vcf\\.gz\\.tbi$",
+                "errorMessage": "Individuals vcf needs to be provided and must have an extension '.vcf.gz.tbi'"
             }
         },
-        "required": ["sample", "fastq_1"]
+        "required": ["sample", "vcf", "index"]
     }
 }
