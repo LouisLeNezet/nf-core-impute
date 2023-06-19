@@ -11,21 +11,22 @@ WorkflowImpute.initialise(params, log)
 
 // TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
-def checkPathParamList = [ params.input, params.multiqc_config, params.fasta ]
+def checkPathParamList = [ params.input, params.multiqc_config, params.panel, params.region ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
 // Check mandatory parameters
-if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
-
+if (params.input)  { ch_input = file(params.input)   } else { exit 1, 'Input samplesheet not specified!' }
+if (params.panel)  { ch_panel = file(params.panel)   } else { exit 1, 'Input panelsheet not specified!'  }
+if (params.region) { ch_region = file(params.region) } else { exit 1, 'Input regionsheet not specified!' }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     CONFIG FILES
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-ch_multiqc_config          = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-ch_multiqc_custom_config   = params.multiqc_config ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
-ch_multiqc_logo            = params.multiqc_logo   ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
+ch_multiqc_config                     = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+ch_multiqc_custom_config              = params.multiqc_config              ? Channel.fromPath( params.multiqc_config, checkIfExists: true ) : Channel.empty()
+ch_multiqc_logo                       = params.multiqc_logo                ? Channel.fromPath( params.multiqc_logo, checkIfExists: true ) : Channel.empty()
 ch_multiqc_custom_methods_description = params.multiqc_methods_description ? file(params.multiqc_methods_description, checkIfExists: true) : file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
 
 /*
@@ -37,7 +38,11 @@ ch_multiqc_custom_methods_description = params.multiqc_methods_description ? fil
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { INPUT_CHECK  } from '../subworkflows/local/input_check'
+include { PANEL_CHECK  } from '../subworkflows/local/input_check'
+include { REGION_CHECK } from '../subworkflows/local/input_check'
+
+include { GET_PANEL    } from '../subworkflows/local/get_panel'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,7 +53,7 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { FASTQC                      } from '../modules/nf-core/fastqc/main'
+include { VCF_IMPUTE_GLIMPSE          } from '../subworkflows/nf-core/vcf_impute_glimpse/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 
@@ -68,22 +73,36 @@ workflow IMPUTE {
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-    INPUT_CHECK (
-        ch_input
-    )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
+    INPUT_CHECK (ch_input)
+    PANEL_CHECK (ch_panel)
+    REGION_CHECK(ch_region)
 
     //
-    // MODULE: Run FastQC
+    // MODULE: Prepare panel
     //
-    FASTQC (
-        INPUT_CHECK.out.reads
+    GET_PANEL(
+        PANEL_CHECK.out.panel,
+        REGION_CHECK.out.region,
+        "/groups/dog/llenezet/script/nf-core-impute/assets/chr_rename.txt"
     )
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
+    ch_versions = ch_versions.mix(GET_PANEL.out.versions)
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+    //
+    // MODULE: Run imputation
+    //
+
+    impute_input = INPUT_CHECK.out.vcf
+                .combine(Channel.of([[]]))
+                .combine(REGION_CHECK.out.region)
+                .map { meta, vcf, index, sample, metaR, fasta, region ->
+                    [meta, vcf, index, sample, region]
+                }
+
+    VCF_IMPUTE_GLIMPSE(impute_input,
+                        GET_PANEL.out.panel_phased
+                            .combine(GET_PANEL.out.panel_phased_index, by:0),
+                        Channel.of([[],[]]).collect())
+    ch_versions = ch_versions.mix(VCF_IMPUTE_GLIMPSE.out.versions)
 
     //
     // MODULE: MultiQC
@@ -97,8 +116,6 @@ workflow IMPUTE {
     ch_multiqc_files = Channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
     ch_multiqc_files = ch_multiqc_files.mix(ch_methods_description.collectFile(name: 'methods_description_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
 
     MULTIQC (
         ch_multiqc_files.collect(),

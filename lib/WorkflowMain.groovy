@@ -85,6 +85,14 @@ class WorkflowMain {
         if (!params.input) {
             Nextflow.error("Please provide an input samplesheet to the pipeline e.g. '--input samplesheet.csv'")
         }
+        // Check panel has been provided
+        if (!params.panel) {
+            Nextflow.error("Please provide an input panelsheet to the pipeline e.g. '--panel panelsheet.csv'")
+        }
+        // Check region has been provided
+        if (!params.region) {
+            Nextflow.error("Please provide an input regionsheet to the pipeline e.g. '--region regionsheet.csv'")
+        }
     }
     //
     // Get attribute from genome config file e.g. fasta

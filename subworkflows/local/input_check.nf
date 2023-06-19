@@ -1,44 +1,90 @@
 //
-// Check input samplesheet and get read channels
+// Check input samplesheet
 //
-
-include { SAMPLESHEET_CHECK } from '../../modules/local/samplesheet_check'
 
 workflow INPUT_CHECK {
     take:
     samplesheet // file: /path/to/samplesheet.csv
 
     main:
-    SAMPLESHEET_CHECK ( samplesheet )
-        .csv
+    Channel.fromPath ( samplesheet )
         .splitCsv ( header:true, sep:',' )
-        .map { create_fastq_channel(it) }
-        .set { reads }
+        .map { create_vcf_channel(it) }
+        .set { vcf }
 
     emit:
-    reads                                     // channel: [ val(meta), [ reads ] ]
-    versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
+    vcf                                     // channel: [ val(meta), [ vcf, index ] ]
 }
 
-// Function to get list of [ meta, [ fastq_1, fastq_2 ] ]
-def create_fastq_channel(LinkedHashMap row) {
+workflow PANEL_CHECK {
+    take:
+    panelsheet // file: /path/to/panelsheet.csv
+
+    main:
+    Channel.fromPath ( panelsheet )
+        .splitCsv ( header:true, sep:',' )
+        .map { create_panel_channel(it) }
+        .set { panel }
+
+    emit:
+    panel                                    // channel: [meta,  panel, index ]
+}
+
+workflow REGION_CHECK {
+    take:
+    regionsheet // file: /path/to/samplesheet.csv
+
+    main:
+    Channel.fromPath ( regionsheet )
+        .splitCsv ( header:true, sep:',' )
+        .map { create_region_channel(it) }
+        .set { region }
+
+    emit:
+    region                                    // channel: [meta, fasta, region ]
+}
+
+
+// Function to get list of [ meta, [ vcf, index ] ]
+def create_vcf_channel(LinkedHashMap row) {
     // create meta map
     def meta = [:]
-    meta.id         = row.sample
-    meta.single_end = row.single_end.toBoolean()
+    meta.id  = row.sample
 
-    // add path(s) of the fastq file(s) to the meta map
-    def fastq_meta = []
-    if (!file(row.fastq_1).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> Read 1 FastQ file does not exist!\n${row.fastq_1}"
+    // add path(s) of the vcf file(s) to the meta map
+    def vcf_meta = []
+    if (!file(row.vcf).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> Read VCF file does not exist!\n${row.vcf}"
     }
-    if (meta.single_end) {
-        fastq_meta = [ meta, [ file(row.fastq_1) ] ]
-    } else {
-        if (!file(row.fastq_2).exists()) {
-            exit 1, "ERROR: Please check input samplesheet -> Read 2 FastQ file does not exist!\n${row.fastq_2}"
-        }
-        fastq_meta = [ meta, [ file(row.fastq_1), file(row.fastq_2) ] ]
+    if (!file(row.index).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> Read index file does not exist!\n${row.index}"
     }
-    return fastq_meta
+    vcf_meta = [ meta, file(row.vcf), file(row.index) ]
+
+    return vcf_meta
+}
+
+// Function to get list of panel
+def create_panel_channel(LinkedHashMap row) {
+    // create meta map
+    def meta = [:]
+    meta.ref        = row.ref_id
+    meta.panel      = row.panel_id
+    meta.id         = row.panel_id
+
+    // add path(s) of the vcf file(s) to the meta map
+    def panel_meta = []
+    panel_meta = [meta, [file(row.file)], [file(row.file_index)]]
+    return panel_meta
+}
+
+def create_region_channel(LinkedHashMap row) {
+    // create meta map
+    def meta = [:]
+    meta.ref        = row.ref
+    meta.region     = "$row.chr:$row.start-$row.end"
+    // colapse regions in chr:start-end format
+    def region_meta = []
+    region_meta = [meta, file(row.fasta), "$row.chr:$row.start-$row.end"]
+    return region_meta
 }
