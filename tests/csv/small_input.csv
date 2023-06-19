@@ -1,0 +1,2 @@
+patient,sample,lane,vcf,index
+NA12878,test,1,https://raw.githubusercontent.com/nf-core/test-datasets/imputation/data/NA12878/NA12878.chr21.s.bcf,https://raw.githubusercontent.com/nf-core/test-datasets/imputation/data/NA12878/NA12878.chr21.s.bcf.csi
