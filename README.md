@@ -92,6 +92,7 @@ For more details about the output files and reports, please refer to the
 - [ ] Add glimpse2
 - [ ] Add check if panel already phased
 - [ ] Add check if regions given or not
+
 ## Credits
 
 nf-core/impute was originally written by @LouisLeNezet.
